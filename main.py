@@ -18,7 +18,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-def handle_request(respond_fn, user_message, user_channel_id):
+def handle_request(client, respond_fn, user_message, user_channel_id):
 
     match=re.search(r"<@([A-Z0-9]+)", user_message)
 
@@ -34,9 +34,9 @@ def handle_request(respond_fn, user_message, user_channel_id):
         channel_id=channel_match.group(1)
     else:
         channel_id=user_channel_id
-        respond_fn(f"Channel not specified. Defaulting to the current channel <#{channel_id}>.")
+        respond_fn(f"Channel not specified. Defaulting to the current channel <#{channel_id}>...")
     try:
-        total_messages=get_total_messages_via_search(user_id, channel_id)
+        total_messages=get_total_messages_via_search(client, user_id, channel_id)
         if total_messages:
             respond_fn(f"<@{user_id}> has sent a total of *{total_messages}* messages in channel <#{channel_id}>.")
             return
@@ -63,25 +63,29 @@ def handle_request(respond_fn, user_message, user_channel_id):
         logging.error(f"Error occurred while fetching messages: {e}")
         respond_fn("An error occurred while fetching messages. Please try again later.")
 
-def get_total_messages_via_search(user_id, channel_id):
-    # to be implemented
-    pass
+def get_total_messages_via_search(client, user_id, channel_id):
+    response=client.search_messages(
+        token=user_token,
+        query=f"from:<@{user_id}> in:<#{channel_id}>",
+        count=1
+    )
+    return response.get("messages", {}).get("total", 0)
 
 def get_total_messages_via_conversation(user_id, channel_id):
     # to be implemented
     pass
 
 @app.command("/message-count")
-def handle_some_command(ack, respond, command, logger):
+def handle_some_command(ack, respond, command, logger, client):
     ack()
     logger.info(f"Queue called by {command['user_name']}({command['user_id']}) in channel {command['channel_name']}({command['channel_id']}) using command {command['command']}")
 
     user_message=command.get("text", "").strip()
     user_channel_id=command["channel_id"]
-    handle_request(respond, user_message, user_channel_id)
+    handle_request(client, respond, user_message, user_channel_id)
 
 @app.event("app_mention")
-def handle_app_mention(event, say, logger):
+def handle_app_mention(event, say, logger, client):
     logger.info(f"Queue called by {event['user']} in channel {event['channel']} using app mention")
 
     thread_timestamp=event.get("ts")
@@ -89,7 +93,7 @@ def handle_app_mention(event, say, logger):
     user_channel_id=event.get("channel")
 
     respond_fn=lambda text: say(text=text, thread_ts=thread_timestamp)
-    handle_request(respond_fn, user_message, user_channel_id)
+    handle_request(client, respond_fn, user_message, user_channel_id)
 
 if __name__ == "__main__":
     SocketModeHandler(app, app_token).start()
