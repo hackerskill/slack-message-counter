@@ -34,7 +34,7 @@ def handle_request(respond_fn, user_message, user_channel_id):
         channel_id=channel_match.group(1)
     else:
         channel_id=user_channel_id
-
+        respond_fn(f"Channel not specified. Defaulting to the current channel <#{channel_id}>.")
     try:
         total_messages=get_total_messages_via_search(user_id, channel_id)
         if total_messages:
@@ -87,7 +87,9 @@ def handle_app_mention(event, say, logger):
     thread_timestamp=event.get("ts")
     user_message=event.get("text", "").strip()
     user_channel_id=event.get("channel")
-    handle_request(say, user_message, user_channel_id)
+
+    respond_fn=lambda text: say(text=text, thread_ts=thread_timestamp)
+    handle_request(respond_fn, user_message, user_channel_id)
 
 if __name__ == "__main__":
     SocketModeHandler(app, app_token).start()
