@@ -12,6 +12,7 @@ bot_token=os.environ.get("SLACK_BOT_TOKEN")
 user_token=os.environ.get("SLACK_USER_TOKEN")
 
 app=App(token=bot_token)
+BOT_USER_ID=app.client.auth_test()["user_id"]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -91,6 +92,9 @@ def handle_app_mention(event, say, logger, client):
     thread_timestamp=event.get("ts")
     user_message=event.get("text", "").strip()
     user_channel_id=event.get("channel")
+
+    user_message = re.sub(rf"<@{BOT_USER_ID}>", "", user_message).strip()
+    user_channel_id = event.get("channel")
 
     respond_fn=lambda text: say(text=text, thread_ts=thread_timestamp)
     handle_request(client, respond_fn, user_message, user_channel_id)
