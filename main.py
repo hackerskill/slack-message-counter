@@ -45,21 +45,7 @@ def handle_request(client, respond_fn, user_message, user_channel_id):
             respond_fn(f"No messages found for <@{user_id}> in channel <#{channel_id}>.")
             return
         else:
-            respond_fn("Can't fetch messages via search. Trying with conversation history...")
-    except Exception as e:
-        logging.error(f"Error occurred while fetching messages: {e}")
-        respond_fn("An error occurred while fetching messages. Please try again later.")
-
-    try:
-        total_messages=get_total_messages_via_conversation(user_id, channel_id)
-        if total_messages:
-            respond_fn(f"<@{user_id}> has sent a total of *{total_messages}* messages in channel <#{channel_id}>.")
-            return
-        elif total_messages==0:
-            respond_fn(f"No messages found for <@{user_id}> in channel <#{channel_id}>.")
-            return
-        else:
-            respond_fn("Can't fetch messages via search and conversation history. Please try again later.")
+            respond_fn("An error occurred while fetching messages. Please try again later.")
     except Exception as e:
         logging.error(f"Error occurred while fetching messages: {e}")
         respond_fn("An error occurred while fetching messages. Please try again later.")
@@ -72,11 +58,7 @@ def get_total_messages_via_search(client, user_id, channel_id):
     )
     return response.get("messages", {}).get("total", 0)
 
-def get_total_messages_via_conversation(user_id, channel_id):
-    # to be implemented
-    pass
-
-@app.command("/message-count")
+@app.command("/count")
 def handle_some_command(ack, respond, command, logger, client):
     ack()
     logger.info(f"Queue called by {command['user_name']}({command['user_id']}) in channel {command['channel_name']}({command['channel_id']}) using command {command['command']}")
